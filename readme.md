@@ -2,8 +2,8 @@
 
 ML Assignment 2 (M.Tech AIML, BITS WILP)
 
-Live app: 
-GitHub: 
+Live app: https://spam-email-classifier-hkb.streamlit.app/
+GitHub: https://github.com/Hrithik110/spam-email-classifier
 
 ## a. Problem statement
 
