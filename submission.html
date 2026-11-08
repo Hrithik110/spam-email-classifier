@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ML Assignment 2 – Submission</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      color: #1a1a1a;
+      background: #fff;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 32px;
+    }
+
+    /* ── Cover ── */
+    .cover {
+      text-align: center;
+      padding: 48px 0 40px;
+      border-bottom: 3px solid #1a56db;
+      margin-bottom: 36px;
+    }
+    .cover .badge {
+      display: inline-block;
+      background: #1a56db;
+      color: #fff;
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      letter-spacing: .6px;
+      margin-bottom: 14px;
+    }
+    .cover h1 { font-size: 28px; color: #1a1a1a; margin-bottom: 6px; }
+    .cover .sub { font-size: 15px; color: #555; margin-bottom: 20px; }
+    .cover .meta { font-size: 13px; color: #444; }
+    .cover .meta span { margin: 0 10px; }
+
+    /* ── Links box ── */
+    .links-box {
+      background: #f0f5ff;
+      border: 1.5px solid #93b4f7;
+      border-radius: 8px;
+      padding: 18px 24px;
+      margin-bottom: 36px;
+    }
+    .links-box h2 { font-size: 15px; margin-bottom: 10px; color: #1a56db; }
+    .links-box a { color: #1a56db; text-decoration: none; font-weight: 600; }
+    .links-box a:hover { text-decoration: underline; }
+    .links-box p { margin: 4px 0; font-size: 13px; }
+
+    /* ── Sections ── */
+    h2.section {
+      font-size: 18px;
+      color: #1a56db;
+      border-left: 4px solid #1a56db;
+      padding-left: 10px;
+      margin: 36px 0 14px;
+    }
+    h3 { font-size: 15px; margin: 18px 0 8px; color: #222; }
+    p  { margin-bottom: 10px; }
+    ul { padding-left: 20px; margin-bottom: 10px; }
+    li { margin-bottom: 4px; }
+
+    /* ── Tables ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 16px;
+      font-size: 13px;
+    }
+    th {
+      background: #1a56db;
+      color: #fff;
+      padding: 8px 10px;
+      text-align: left;
+    }
+    td {
+      padding: 7px 10px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    tr:nth-child(even) td { background: #f7f9ff; }
+    tr:hover td { background: #edf2ff; }
+    .winner td { font-weight: 700; background: #e8f0ff !important; }
+
+    /* ── Screenshot ── */
+    .screenshot-wrap {
+      margin: 18px 0 24px;
+      text-align: center;
+    }
+    .screenshot-wrap img {
+      max-width: 100%;
+      border: 1.5px solid #ccc;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.12);
+    }
+    .screenshot-wrap .caption {
+      font-size: 12px;
+      color: #666;
+      margin-top: 6px;
+    }
+
+    /* ── Observation table ── */
+    .obs-table td:first-child { width: 26%; font-weight: 600; }
+
+    /* ── Checklist ── */
+    .checklist { list-style: none; padding: 0; }
+    .checklist li { padding: 5px 0; border-bottom: 1px solid #eee; }
+    .checklist li::before { content: "✅ "; }
+
+    /* ── Footer ── */
+    footer {
+      margin-top: 48px;
+      padding-top: 16px;
+      border-top: 1px solid #ddd;
+      font-size: 12px;
+      color: #888;
+      text-align: center;
+    }
+
+    @media print {
+      body { padding: 20px; }
+      .no-print { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════  COVER  ═══════════════════ -->
+<div class="cover">
+  <div class="badge">M.Tech AIML · BITS WILP</div>
+  <h1>Spam Email Classifier</h1>
+  <div class="sub">Machine Learning — Assignment 2</div>
+  <div class="meta">
+    <span>📅 Submitted: 08-Nov-2026</span>
+    <span>🎯 Marks: 15</span>
+    <span>👤 Hrithik Kumar Bhardwaj</span>
+  </div>
+</div>
+
+<!-- ═══════════════════  MANDATORY LINKS  ═══════════════════ -->
+<div class="links-box">
+  <h2>📎 Mandatory Submission Links</h2>
+  <p>🔗 <strong>GitHub Repository:</strong>
+     <a href="https://github.com/Hrithik110/spam-email-classifier" target="_blank">
+       https://github.com/Hrithik110/spam-email-classifier
+     </a>
+  </p>
+  <p>🚀 <strong>Live Streamlit App:</strong>
+     <a href="https://spam-email-classifier-hkb.streamlit.app/" target="_blank">
+       https://spam-email-classifier-hkb.streamlit.app/
+     </a>
+  </p>
+</div>
+
+<!-- ═══════════════════  a. PROBLEM STATEMENT  ═══════════════════ -->
+<h2 class="section">a. Problem Statement</h2>
+<p>
+  The goal is to predict whether an email is spam or not spam using numerical
+  features extracted from the email body (word frequencies, symbol frequencies,
+  and capital-letter run statistics).
+  Five classification algorithms are trained on the same dataset, evaluated on
+  a held-out test set using six standard metrics, and served through an
+  interactive Streamlit application that accepts any compatible test CSV and
+  returns predictions without retraining.
+</p>
+
+<!-- ═══════════════════  b. DATASET DESCRIPTION  ═══════════════════ -->
+<h2 class="section">b. Dataset Description</h2>
+<ul>
+  <li><strong>Source:</strong> UCI Machine Learning Repository — Spambase</li>
+  <li><strong>Total instances:</strong> 4 601 emails</li>
+  <li><strong>Total features:</strong> 57 input features + 1 target column (<code>is_spam</code>)</li>
+  <li><strong>Class distribution:</strong> 2 788 not-spam (60.6 %) · 1 813 spam (39.4 %)</li>
+  <li><strong>Missing values:</strong> None</li>
+</ul>
+<h3>Feature Groups</h3>
+<table>
+  <tr><th>Group</th><th>Count</th><th>Description</th></tr>
+  <tr><td>Word frequency</td><td>48</td><td>Percentage of times a specific word (e.g. "free", "money") appears in the email</td></tr>
+  <tr><td>Character frequency</td><td>6</td><td>Percentage of characters that are ; ( [ ! $ #</td></tr>
+  <tr><td>Capital-letter runs</td><td>3</td><td>Average / longest / total length of unbroken sequences of capital letters</td></tr>
+</table>
+<p>
+  The data was split 80 / 20 (stratified, <code>random_state=42</code>).
+  A <code>StandardScaler</code> was fitted on the training portion only and
+  applied to both splits. The 921-row test set is saved as
+  <code>test_data.csv</code> and used by the Streamlit app.
+</p>
+
+<!-- ═══════════════════  c. GITHUB REPOSITORY  ═══════════════════ -->
+<h2 class="section">c. GitHub Repository</h2>
+<p>
+  🔗 <a href="https://github.com/Hrithik110/spam-email-classifier" target="_blank">
+    https://github.com/Hrithik110/spam-email-classifier
+  </a>
+</p>
+<h3>Repository Structure</h3>
+<table>
+  <tr><th>File / Folder</th><th>Purpose</th></tr>
+  <tr><td><code>app.py</code></td><td>Streamlit application</td></tr>
+  <tr><td><code>requirements.txt</code></td><td>Python dependencies</td></tr>
+  <tr><td><code>README.md</code></td><td>Project documentation</td></tr>
+  <tr><td><code>test_data.csv</code></td><td>921-row held-out test set for upload</td></tr>
+  <tr><td><code>model/model.py</code></td><td>Training script — loads data, trains all 5 models, saves artefacts</td></tr>
+  <tr><td><code>model/scaler.joblib</code></td><td>Fitted <code>StandardScaler</code></td></tr>
+  <tr><td><code>model/logistic_regression.joblib</code></td><td>Saved Logistic Regression model</td></tr>
+  <tr><td><code>model/decision_tree.joblib</code></td><td>Saved Decision Tree model</td></tr>
+  <tr><td><code>model/knn.joblib</code></td><td>Saved KNN model</td></tr>
+  <tr><td><code>model/naive_bayes.joblib</code></td><td>Saved Gaussian Naïve Bayes model</td></tr>
+  <tr><td><code>model/svm.joblib</code></td><td>Saved SVM model</td></tr>
+  <tr><td><code>model/results.csv</code></td><td>Pre-computed metric table shown in the app</td></tr>
+  <tr><td><code>model/data/spambase.data</code></td><td>Original UCI dataset</td></tr>
+</table>
+
+<!-- ═══════════════════  d. MODELS & METRICS  ═══════════════════ -->
+<h2 class="section">d. Models Used &amp; Evaluation Metrics</h2>
+
+<h3>Comparison Table (test set · 921 emails)</h3>
+<table>
+  <tr>
+    <th>ML Model Name</th>
+    <th>Accuracy</th>
+    <th>AUC</th>
+    <th>Precision</th>
+    <th>Recall</th>
+    <th>F1</th>
+    <th>MCC</th>
+  </tr>
+  <tr class="winner">
+    <td>Logistic Regression ⭐</td>
+    <td>0.9294</td><td>0.9702</td><td>0.9209</td>
+    <td>0.8981</td><td>0.9093</td><td>0.8518</td>
+  </tr>
+  <tr>
+    <td>Decision Tree</td>
+    <td>0.9110</td><td>0.9078</td><td>0.8828</td>
+    <td>0.8926</td><td>0.8877</td><td>0.8140</td>
+  </tr>
+  <tr>
+    <td>KNN</td>
+    <td>0.9077</td><td>0.9506</td><td>0.8861</td>
+    <td>0.8788</td><td>0.8824</td><td>0.8065</td>
+  </tr>
+  <tr>
+    <td>Naïve Bayes</td>
+    <td>0.8328</td><td>0.9376</td><td>0.7146</td>
+    <td>0.9587</td><td>0.8188</td><td>0.6946</td>
+  </tr>
+  <tr>
+    <td>Support Vector Machine</td>
+    <td>0.9273</td><td>0.9667</td><td>0.9277</td>
+    <td>0.8843</td><td>0.9055</td><td>0.8471</td>
+  </tr>
+</table>
+<p style="font-size:12px;color:#555;">⭐ = overall winner · Precision, Recall, F1 reported for the positive (spam) class.</p>
+
+<h3>Observations</h3>
+<table class="obs-table">
+  <tr>
+    <th>ML Model Name</th>
+    <th>Observation about model performance</th>
+  </tr>
+  <tr>
+    <td>Logistic Regression</td>
+    <td>
+      Best accuracy (92.94 %), highest AUC (0.9702) and highest MCC (0.8518).
+      Train accuracy is 93.07 % — almost identical to test accuracy —
+      confirming no overfitting. The decision boundary found by the linear model
+      generalises very well to this feature set.
+    </td>
+  </tr>
+  <tr>
+    <td>Decision Tree</td>
+    <td>
+      Train accuracy was 99.97 % but test accuracy dropped to 91.10 %, a clear
+      sign of overfitting. The tree memorised the training data.
+      It also has the lowest AUC (0.9078), meaning its probability estimates
+      are less reliable than the other models.
+    </td>
+  </tr>
+  <tr>
+    <td>KNN</td>
+    <td>
+      Respectable results (90.77 % accuracy, AUC 0.9506), but it lags behind
+      Logistic Regression and SVM. Train accuracy was 93.45 %,
+      so there is a small but meaningful generalisation gap.
+      KNN must store the entire training set and re-computes distances at
+      prediction time, making it slower in production.
+    </td>
+  </tr>
+  <tr>
+    <td>Naïve Bayes</td>
+    <td>
+      Lowest accuracy (83.28 %) and MCC (0.6946), but the highest recall
+      (0.9587), meaning it catches nearly every spam email.
+      The trade-off is low precision (0.7146): many legitimate emails are
+      incorrectly flagged as spam. This is expected because the
+      Gaussian NB independence assumption is violated — spam-related words
+      are highly correlated with each other.
+    </td>
+  </tr>
+  <tr>
+    <td>Support Vector Machine</td>
+    <td>
+      Almost as good as Logistic Regression (92.73 % accuracy, MCC 0.8471)
+      and has the best precision (0.9277), so it makes the fewest false
+      positives — important in a spam filter where wrongly blocking a
+      legitimate email is costly.
+    </td>
+  </tr>
+  <tr style="background:#e8f0ff;font-weight:700;">
+    <td>Overall Winner</td>
+    <td>
+      <strong>Logistic Regression</strong> — best on accuracy, AUC, F1 and MCC
+      with no overfitting. SVM is very close; the gap may be noise on this
+      particular test split, making either a valid production choice.
+    </td>
+  </tr>
+</table>
+
+<!-- ═══════════════════  VIRTUAL LAB SCREENSHOT  ═══════════════════ -->
+<h2 class="section">BITS Virtual Lab — Execution Screenshot</h2>
+<p>
+  The training script (<code>model/model.py</code>) was executed on the BITS
+  Virtual Lab environment. The terminal output confirms all five models were
+  trained and evaluated, and the best model was identified as
+  <strong>Logistic Regression</strong> by MCC.
+</p>
+
+<div class="screenshot-wrap">
+  <img src="screenshot1.png"
+       alt="BITS Virtual Lab – model.py execution showing terminal output with all 5 model metrics"
+       onerror="this.style.display='none';document.getElementById('img1-fallback').style.display='block'" />
+  <div id="img1-fallback" style="display:none;padding:20px;background:#fff3cd;border:1px solid #f0ad4e;border-radius:6px;margin:8px 0;">
+    ⚠️ Place the first screenshot (terminal output) in the same folder as this HTML and name it <code>screenshot1.png</code>
+  </div>
+  <div class="caption">
+    Figure 1 — model.py running on BITS Virtual Lab (g4.prayogshala.bits-pilani.ac.in),
+    2026-11-07 23:08. Terminal shows shape (4601, 58), class distribution,
+    and final metrics table with Logistic Regression as best model.
+  </div>
+</div>
+
+<div class="screenshot-wrap">
+  <img src="screenshot2.png"
+       alt="BITS Virtual Lab – Streamlit app running on localhost:8501 showing Logistic Regression results"
+       onerror="this.style.display='none';document.getElementById('img2-fallback').style.display='block'" />
+  <div id="img2-fallback" style="display:none;padding:20px;background:#fff3cd;border:1px solid #f0ad4e;border-radius:6px;margin:8px 0;">
+    ⚠️ Place the second screenshot (Streamlit app) in the same folder as this HTML and name it <code>screenshot2.png</code>
+  </div>
+  <div class="caption">
+    Figure 2 — Streamlit app running on BITS Virtual Lab (localhost:8501),
+    2026-11-07 23:12. Shows test_data.csv uploaded (921 rows),
+    Logistic Regression selected, and metrics Accuracy 0.9294 · AUC 0.9702 ·
+    Precision 0.9209 · Recall 0.8981 · F1 0.9093 · MCC 0.8518, along with
+    the confusion matrix and classification report.
+  </div>
+</div>
+
+<!-- ═══════════════════  STREAMLIT APP FEATURES  ═══════════════════ -->
+<h2 class="section">Streamlit App Features</h2>
+<table>
+  <tr><th>#</th><th>Required Feature</th><th>Implementation</th></tr>
+  <tr>
+    <td>1</td>
+    <td>Dataset upload option (CSV)</td>
+    <td><code>st.sidebar.file_uploader("Upload test CSV file", type="csv")</code> — sidebar uploader, accepts any CSV with the 57 feature columns + <code>is_spam</code></td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td>Model selection dropdown</td>
+    <td><code>st.sidebar.selectbox("Choose a model…", list(MODEL_FILES))</code> — all 5 classifiers selectable</td>
+  </tr>
+  <tr>
+    <td>3</td>
+    <td>Display of evaluation metrics</td>
+    <td>Six <code>st.metric</code> tiles: Accuracy, AUC, Precision, Recall, F1, MCC</td>
+  </tr>
+  <tr>
+    <td>4</td>
+    <td>Confusion matrix + classification report</td>
+    <td><code>ConfusionMatrixDisplay.from_predictions</code> rendered with Matplotlib; full classification report as a styled dataframe</td>
+  </tr>
+</table>
+
+<!-- ═══════════════════  FINAL CHECKLIST  ═══════════════════ -->
+<h2 class="section">Final Submission Checklist</h2>
+<ul class="checklist">
+  <li>GitHub repo link works and is publicly accessible</li>
+  <li>Streamlit app link opens and is interactive</li>
+  <li>App loads without errors; no retraining on upload</li>
+  <li>All 5 models implemented (LR, DT, KNN, NB, SVM)</li>
+  <li>All 6 metrics computed (Accuracy, AUC, Precision, Recall, F1, MCC)</li>
+  <li>Dataset upload option present in app</li>
+  <li>Model selection dropdown present in app</li>
+  <li>Evaluation metrics displayed in app</li>
+  <li>Confusion matrix and classification report displayed in app</li>
+  <li>README.md present with all required sections</li>
+  <li>test_data.csv present in repository</li>
+  <li>requirements.txt present with all dependencies</li>
+  <li>All saved model .joblib files present in model/</li>
+  <li>BITS Virtual Lab screenshot included in submission</li>
+</ul>
+
+<!-- ═══════════════════  FOOTER  ═══════════════════ -->
+<footer>
+  Machine Learning · Assignment 2 · M.Tech AIML · BITS WILP · 2026 &nbsp;|&nbsp;
+  Dataset: UCI Spambase &nbsp;|&nbsp;
+  Live app: <a href="https://spam-email-classifier-hkb.streamlit.app/">spam-email-classifier-hkb.streamlit.app</a>
+</footer>
+
+</body>
+</html>

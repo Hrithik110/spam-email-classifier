@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How It Works — Spam Email Classifier</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --blue:   #1a56db;
+      --lblue:  #e8f0ff;
+      --green:  #0a7c42;
+      --lgreen: #e6f4ed;
+      --orange: #b45309;
+      --lorange:#fff7e6;
+      --purple: #6d28d9;
+      --lpurple:#f3f0ff;
+      --red:    #c0392b;
+      --lred:   #fdf0f0;
+      --teal:   #0e7490;
+      --lteal:  #e0f7fa;
+      --gray:   #f5f5f5;
+      --border: #e0e0e0;
+      --text:   #1a1a1a;
+    }
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.7;
+      color: var(--text);
+      background: #fff;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky;
+      top: 0;
+      background: var(--blue);
+      padding: 10px 32px;
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      z-index: 100;
+    }
+    nav a {
+      color: #c8d8ff;
+      text-decoration: none;
+      font-size: 12px;
+      letter-spacing: .3px;
+    }
+    nav a:hover { color: #fff; }
+
+    /* ── LAYOUT ── */
+    .page { max-width: 960px; margin: 0 auto; padding: 40px 32px 60px; }
+
+    /* ── COVER ── */
+    .cover {
+      text-align: center;
+      padding: 48px 0 36px;
+      border-bottom: 3px solid var(--blue);
+      margin-bottom: 44px;
+    }
+    .cover h1 { font-size: 30px; color: var(--blue); margin-bottom: 8px; }
+    .cover p  { color: #555; font-size: 15px; }
+
+    /* ── SECTION HEADINGS ── */
+    h2.sec {
+      font-size: 20px;
+      color: var(--blue);
+      border-left: 5px solid var(--blue);
+      padding-left: 12px;
+      margin: 48px 0 16px;
+    }
+    h3 { font-size: 15px; margin: 20px 0 8px; }
+
+    p  { margin-bottom: 10px; }
+    ul { padding-left: 20px; margin-bottom: 10px; }
+    li { margin-bottom: 4px; }
+
+    /* ── MODEL CARDS ── */
+    .model-card {
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 28px;
+      overflow: hidden;
+    }
+    .model-card .card-header {
+      padding: 14px 20px;
+      font-weight: 700;
+      font-size: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .card-header .icon { font-size: 22px; }
+    .model-card .card-body { padding: 18px 20px; }
+
+    .card-lr   .card-header { background: var(--lblue);   color: var(--blue);   }
+    .card-dt   .card-header { background: var(--lgreen);  color: var(--green);  }
+    .card-knn  .card-header { background: var(--lorange); color: var(--orange); }
+    .card-nb   .card-header { background: var(--lpurple); color: var(--purple); }
+    .card-svm  .card-header { background: var(--lteal);   color: var(--teal);   }
+
+    /* ── FORMULA BOX ── */
+    .formula {
+      background: #fafafa;
+      border: 1px solid #ddd;
+      border-left: 4px solid var(--blue);
+      border-radius: 4px;
+      padding: 10px 16px;
+      font-family: "Courier New", monospace;
+      font-size: 13px;
+      margin: 10px 0 14px;
+      color: #333;
+    }
+
+    /* ── STEP BOXES ── */
+    .step-list { list-style: none; padding: 0; counter-reset: steps; }
+    .step-list li {
+      counter-increment: steps;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    .step-list li::before {
+      content: counter(steps);
+      flex-shrink: 0;
+      width: 28px; height: 28px;
+      background: var(--blue);
+      color: #fff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      margin-top: 2px;
+    }
+
+    /* ── CODE BLOCK ── */
+    pre {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      border-radius: 8px;
+      padding: 18px 20px;
+      font-size: 12.5px;
+      overflow-x: auto;
+      margin: 12px 0 16px;
+      line-height: 1.5;
+    }
+    .kw  { color: #569cd6; }
+    .fn  { color: #dcdcaa; }
+    .st  { color: #ce9178; }
+    .cm  { color: #6a9955; }
+    .num { color: #b5cea8; }
+
+    /* ── INFO BOX ── */
+    .info-box {
+      background: var(--lblue);
+      border: 1.5px solid #93b4f7;
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin: 14px 0;
+    }
+    .info-box.green  { background: var(--lgreen);  border-color: #6fcf97; }
+    .info-box.orange { background: var(--lorange); border-color: #f6ad55; }
+
+    /* ── DIAGRAM ── */
+    .diagram {
+      background: var(--gray);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      margin: 16px 0;
+      font-family: monospace;
+      font-size: 12.5px;
+      white-space: pre;
+      overflow-x: auto;
+    }
+
+    /* ── METRICS TABLE ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 16px;
+      font-size: 13px;
+    }
+    th {
+      background: var(--blue);
+      color: #fff;
+      padding: 8px 10px;
+      text-align: left;
+    }
+    td { padding: 7px 10px; border-bottom: 1px solid var(--border); }
+    tr:nth-child(even) td { background: #f7f9ff; }
+
+    /* ── FOOTER ── */
+    footer {
+      margin-top: 48px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      font-size: 12px;
+      color: #888;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="#models">🧠 Models</a>
+  <a href="#lr">Logistic Regression</a>
+  <a href="#dt">Decision Tree</a>
+  <a href="#knn">KNN</a>
+  <a href="#nb">Naïve Bayes</a>
+  <a href="#svm">SVM</a>
+  <a href="#metrics">📊 Metrics</a>
+  <a href="#pipeline">⚙️ Pipeline</a>
+  <a href="#app">🖥️ Streamlit App</a>
+</nav>
+
+<div class="page">
+
+<!-- ════════════════  COVER  ════════════════ -->
+<div class="cover">
+  <h1>How It All Works</h1>
+  <p>A plain-English guide to every model, metric, and line of code in the Spam Email Classifier.</p>
+</div>
+
+<!-- ════════════════  PROJECT OVERVIEW  ════════════════ -->
+<h2 class="sec" id="overview">Project at a Glance</h2>
+<p>
+  The project trains five classic ML classifiers on the
+  <strong>UCI Spambase dataset</strong> (4 601 emails, 57 numerical features)
+  to decide whether an email is spam or not.
+  Each trained model is saved to disk.
+  A Streamlit web app lets anyone upload a test CSV, pick a model, and instantly
+  see six evaluation metrics, a confusion matrix, and a classification report —
+  all without retraining.
+</p>
+
+<div class="diagram">  [spambase.data]
+        │
+        ▼
+  model/model.py
+  ┌─────────────────────────────────────────────┐
+  │  Load data → Split 80/20 → Fit Scaler       │
+  │  → Train 5 models → Evaluate → Save .joblib │
+  └─────────────────────────────────────────────┘
+        │
+        ▼
+  model/*.joblib  +  scaler.joblib  +  results.csv
+        │
+        ▼
+    app.py  (Streamlit)
+  ┌─────────────────────────────────────────────┐
+  │  Upload CSV → Load scaler → Scale X         │
+  │  → Load chosen model → Predict              │
+  │  → Show metrics / confusion matrix          │
+  └─────────────────────────────────────────────┘</div>
+
+<!-- ════════════════  MODELS  ════════════════ -->
+<h2 class="sec" id="models">The Five Classification Models</h2>
+
+<!-- ─── LR ─── -->
+<div class="model-card card-lr" id="lr">
+  <div class="card-header">
+    <span class="icon">📈</span> 1 · Logistic Regression
+  </div>
+  <div class="card-body">
+    <h3>Core idea</h3>
+    <p>
+      Despite the name, Logistic Regression is a <em>classifier</em>.
+      It models the probability that an email is spam as a sigmoid (S-shaped)
+      function of a weighted sum of the input features.
+    </p>
+    <div class="formula">P(spam | x)  =  σ( w₀ + w₁x₁ + w₂x₂ + … + w₅₇x₅₇ )
+
+where  σ(z) = 1 / (1 + e^(-z))</div>
+    <h3>How training works (step by step)</h3>
+    <ol class="step-list">
+      <li>Initialise all weights w to small random values.</li>
+      <li>For every email in the training set, compute P(spam) using the sigmoid formula.</li>
+      <li>Compute the <em>log-loss</em> (cross-entropy): how far the predicted probability is from the true label.</li>
+      <li>Use <strong>gradient descent</strong> to nudge every weight in the direction that reduces the loss.</li>
+      <li>Repeat until the weights stop changing significantly (<code>max_iter=1000</code>).</li>
+    </ol>
+    <h3>Decision boundary</h3>
+    <p>
+      After training, prediction is simple: if the sigmoid output ≥ 0.5, classify as spam; otherwise not spam.
+      The boundary is a <em>hyperplane</em> in the 57-dimensional feature space.
+    </p>
+    <div class="info-box">
+      <strong>Why it worked best here:</strong> The spambase features are roughly linearly separable — the
+      boundary between spam and not-spam can be described well by a weighted combination of word frequencies.
+      Logistic Regression finds that boundary without overfitting.
+    </div>
+    <h3>Code used</h3>
+<pre><span class="kw">from</span> sklearn.linear_model <span class="kw">import</span> LogisticRegression
+
+clf = <span class="fn">LogisticRegression</span>(max_iter=<span class="num">1000</span>, random_state=<span class="num">42</span>)
+clf.<span class="fn">fit</span>(X_train_scaled, y_train)
+<span class="cm"># max_iter=1000 gives the solver enough steps to converge</span></pre>
+  </div>
+</div>
+
+<!-- ─── DT ─── -->
+<div class="model-card card-dt" id="dt">
+  <div class="card-header">
+    <span class="icon">🌳</span> 2 · Decision Tree Classifier
+  </div>
+  <div class="card-body">
+    <h3>Core idea</h3>
+    <p>
+      A Decision Tree asks a series of yes/no questions about the features
+      (e.g. "Is word_freq_free > 0.3?") and splits the data into smaller
+      and smaller groups until each group is mostly one class.
+    </p>
+    <div class="formula">At each node, pick the feature and threshold that maximises
+Information Gain  =  H(parent) − [ weighted average of H(children) ]
+
+where H (entropy) = −Σ p·log₂(p)  for each class proportion p</div>
+    <h3>How training works</h3>
+    <ol class="step-list">
+      <li>Start at the root with all training emails.</li>
+      <li>Try every possible split (feature × threshold) and pick the one with the highest information gain.</li>
+      <li>Recursively repeat for each resulting child node.</li>
+      <li>Stop when a node is pure, empty, or a minimum-size limit is reached.</li>
+    </ol>
+    <h3>Prediction</h3>
+    <p>
+      Follow the tree from root to a leaf — each internal node is a yes/no question —
+      and return the majority class label of that leaf.
+    </p>
+    <div class="info-box orange">
+      <strong>Overfitting warning:</strong> Without depth limits, the tree grows deep enough
+      to memorise every training example. Here the training accuracy was 99.97 % but test
+      accuracy was 91.1 %, a classic overfitting signature.
+      Setting <code>max_depth</code> or <code>min_samples_leaf</code> would reduce this.
+    </div>
+    <h3>Code used</h3>
+<pre><span class="kw">from</span> sklearn.tree <span class="kw">import</span> DecisionTreeClassifier
+
+clf = <span class="fn">DecisionTreeClassifier</span>(random_state=<span class="num">42</span>)
+<span class="cm"># No max_depth set → tree grows until pure; overfits</span>
+clf.<span class="fn">fit</span>(X_train_scaled, y_train)</pre>
+  </div>
+</div>
+
+<!-- ─── KNN ─── -->
+<div class="model-card card-knn" id="knn">
+  <div class="card-header">
+    <span class="icon">🔍</span> 3 · K-Nearest Neighbour (KNN)
+  </div>
+  <div class="card-body">
+    <h3>Core idea</h3>
+    <p>
+      KNN is a <em>lazy learner</em> — it does no learning at training time.
+      To classify a new email, it finds the K most similar emails in the
+      training set and returns the majority label among them.
+    </p>
+    <div class="formula">Distance between two emails:
+d(a, b) = √( Σᵢ (aᵢ − bᵢ)² )   ← Euclidean distance in 57-d space
+
+Predict = majority class among the K=5 nearest neighbours</div>
+    <h3>How it works</h3>
+    <ol class="step-list">
+      <li>"Training" just stores all 3 680 training examples in memory.</li>
+      <li>At prediction time, compute the distance from the query email to every stored email.</li>
+      <li>Sort by distance and pick the K=5 closest.</li>
+      <li>Return the class that appears most often in those 5 neighbours.</li>
+    </ol>
+    <div class="info-box orange">
+      <strong>Why scaling matters critically here:</strong> If feature ranges differ,
+      a feature with large values will dominate the Euclidean distance.
+      The <code>StandardScaler</code> (zero mean, unit variance) ensures every
+      feature contributes equally.
+    </div>
+    <h3>Code used</h3>
+<pre><span class="kw">from</span> sklearn.neighbors <span class="kw">import</span> KNeighborsClassifier
+
+clf = <span class="fn">KNeighborsClassifier</span>(n_neighbors=<span class="num">5</span>)
+<span class="cm"># K=5: majority vote of 5 nearest emails in feature space</span>
+clf.<span class="fn">fit</span>(X_train_scaled, y_train)  <span class="cm"># just stores the data</span></pre>
+  </div>
+</div>
+
+<!-- ─── NB ─── -->
+<div class="model-card card-nb" id="nb">
+  <div class="card-header">
+    <span class="icon">📊</span> 4 · Gaussian Naïve Bayes
+  </div>
+  <div class="card-body">
+    <h3>Core idea</h3>
+    <p>
+      Naïve Bayes applies <strong>Bayes' theorem</strong> with the
+      "naïve" assumption that all 57 features are independent of each other
+      given the class label. Despite this almost-never-true assumption,
+      it often performs surprisingly well.
+    </p>
+    <div class="formula">Bayes' theorem:
+P(spam | x) ∝ P(spam) × P(x₁|spam) × P(x₂|spam) × … × P(x₅₇|spam)
+
+Gaussian assumption:
+P(xᵢ | class) = (1/√(2πσ²)) × exp( −(xᵢ−μ)²/(2σ²) )
+→ mean μ and variance σ² estimated from training data for each feature & class</div>
+    <h3>How training works</h3>
+    <ol class="step-list">
+      <li>Compute the prior probability of each class: P(spam) = 1813/4601.</li>
+      <li>For every one of the 57 features, compute the mean and variance <em>separately</em> for spam emails and not-spam emails.</li>
+      <li>That's all — the model is just 57×2 means and 57×2 variances plus two priors.</li>
+    </ol>
+    <h3>Prediction</h3>
+    <p>
+      Plug the feature values into the Gaussian formula for each class,
+      multiply all likelihoods together (or sum log-likelihoods for numerical stability),
+      add the log prior, and pick the class with the higher score.
+    </p>
+    <div class="info-box">
+      <strong>Why precision is low here:</strong> The independence assumption fails badly —
+      spam words like "free", "money" and "credit" appear together, not independently.
+      The model overestimates the spam probability, causing many false positives
+      (real emails flagged as spam). This is why precision is only 0.7146.
+    </div>
+    <h3>Code used</h3>
+<pre><span class="kw">from</span> sklearn.naive_bayes <span class="kw">import</span> GaussianNB
+
+clf = <span class="fn">GaussianNB</span>()  <span class="cm"># no hyperparameters needed</span>
+clf.<span class="fn">fit</span>(X_train_scaled, y_train)</pre>
+  </div>
+</div>
+
+<!-- ─── SVM ─── -->
+<div class="model-card card-svm" id="svm">
+  <div class="card-header">
+    <span class="icon">✂️</span> 5 · Support Vector Machine (SVM)
+  </div>
+  <div class="card-body">
+    <h3>Core idea</h3>
+    <p>
+      SVM finds the <strong>hyperplane</strong> that separates spam from not-spam
+      with the <em>maximum margin</em> — the widest possible gap between the two
+      classes. Only the training emails closest to the boundary (the
+      <em>support vectors</em>) influence where the boundary sits.
+    </p>
+    <div class="formula">Optimisation goal:
+  Maximise the margin  2 / ‖w‖
+  Subject to: yᵢ ( w·xᵢ + b ) ≥ 1  for all training points
+
+Soft-margin (C parameter) allows some misclassifications to handle noise.
+RBF kernel (default): K(a,b) = exp(−γ ‖a−b‖²) — maps to higher dimensions.</div>
+    <h3>How training works</h3>
+    <ol class="step-list">
+      <li>Map every email from 57-d feature space into a higher-dimensional space using the RBF kernel (done implicitly — never computed explicitly).</li>
+      <li>Find the hyperplane in that space that separates spam from not-spam with the maximum margin.</li>
+      <li>This is a <em>quadratic programming</em> problem solved by the SMO algorithm internally.</li>
+      <li><code>probability=True</code> adds a calibration step (Platt scaling) so the model can output probabilities, which is required for AUC calculation.</li>
+    </ol>
+    <div class="info-box">
+      <strong>Best precision (0.9277):</strong> The maximum-margin objective naturally
+      produces a conservative boundary — it only predicts spam when it is very
+      confident, resulting in fewer false positives.
+    </div>
+    <h3>Code used</h3>
+<pre><span class="kw">from</span> sklearn.svm <span class="kw">import</span> SVC
+
+clf = <span class="fn">SVC</span>(probability=<span class="kw">True</span>, random_state=<span class="num">42</span>)
+<span class="cm"># probability=True enables predict_proba() for AUC; adds Platt scaling</span>
+<span class="cm"># Default kernel: RBF; Default C=1.0</span>
+clf.<span class="fn">fit</span>(X_train_scaled, y_train)</pre>
+  </div>
+</div>
+
+<!-- ════════════════  METRICS  ════════════════ -->
+<h2 class="sec" id="metrics">Evaluation Metrics Explained</h2>
+<p>All six metrics are calculated on the held-out test set (921 emails never seen during training).</p>
+
+<table>
+  <tr><th>Metric</th><th>Formula</th><th>What it tells you</th></tr>
+  <tr>
+    <td><strong>Accuracy</strong></td>
+    <td><code>(TP + TN) / Total</code></td>
+    <td>Overall fraction of correctly classified emails. Can mislead on imbalanced datasets.</td>
+  </tr>
+  <tr>
+    <td><strong>AUC</strong></td>
+    <td>Area under the ROC curve</td>
+    <td>How well the model <em>ranks</em> spam above not-spam across all probability thresholds. 1.0 = perfect, 0.5 = random.</td>
+  </tr>
+  <tr>
+    <td><strong>Precision</strong></td>
+    <td><code>TP / (TP + FP)</code></td>
+    <td>Of all emails predicted spam, how many really are? High precision → fewer real emails wrongly blocked.</td>
+  </tr>
+  <tr>
+    <td><strong>Recall</strong></td>
+    <td><code>TP / (TP + FN)</code></td>
+    <td>Of all actual spam emails, how many were caught? High recall → fewer spam emails slipping through.</td>
+  </tr>
+  <tr>
+    <td><strong>F1 Score</strong></td>
+    <td><code>2 × (P × R) / (P + R)</code></td>
+    <td>Harmonic mean of Precision and Recall. Useful when you want to balance both.</td>
+  </tr>
+  <tr>
+    <td><strong>MCC</strong></td>
+    <td><code>(TP·TN − FP·FN) / √((TP+FP)(TP+FN)(TN+FP)(TN+FN))</code></td>
+    <td>Matthews Correlation Coefficient. A single number in [−1, 1] that accounts for all four confusion-matrix cells. Considered the most informative single metric for binary classification.</td>
+  </tr>
+</table>
+
+<h3>Confusion Matrix</h3>
+<div class="diagram">                  Predicted
+                NOT SPAM    SPAM
+Actual NOT SPAM   TN  │  FP    ← False Positive: real email wrongly blocked
+           ─────────────────
+       SPAM       FN  │  TP    ← False Negative: spam that slipped through</div>
+<p>
+  For the Logistic Regression model on the 921-email test set:
+  TN = 530 · FP = 28 · FN = 37 · TP = 326.
+  This means 28 real emails were wrongly flagged (FP) and 37 spam emails were missed (FN).
+</p>
+
+<!-- ════════════════  PIPELINE  ════════════════ -->
+<h2 class="sec" id="pipeline">The Training Pipeline (model.py)</h2>
+
+<ol class="step-list">
+  <li>
+    <div>
+      <strong>Load data</strong><br/>
+      Read <code>spambase.data</code> (CSV with no header) and attach the 58 column names
+      (57 features + <code>is_spam</code>).
+    </div>
+  </li>
+  <li>
+    <div>
+      <strong>Stratified train / test split (80 / 20)</strong><br/>
+      <code>train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)</code>
+      keeps the 60/40 spam ratio the same in both splits.
+      3 680 emails for training, 921 for testing.
+    </div>
+  </li>
+  <li>
+    <div>
+      <strong>Save test data</strong><br/>
+      The unscaled test features + labels are written to <code>test_data.csv</code>
+      so the Streamlit app can accept the same file.
+    </div>
+  </li>
+  <li>
+    <div>
+      <strong>Fit the scaler on training data only</strong><br/>
+      <code>StandardScaler</code> computes mean and std from the training split only,
+      then transforms both splits. Fitting on all data would leak test statistics
+      into the model — a form of data leakage.
+    </div>
+  </li>
+  <li>
+    <div>
+      <strong>Train all 5 models on the scaled training set</strong><br/>
+      Each classifier is fitted independently on the same
+      <code>X_train_scaled</code> and <code>y_train</code>.
+    </div>
+  </li>
+  <li>
+    <div>
+      <strong>Evaluate on the scaled test set</strong><br/>
+      Compute the 6 metrics for each model; record train accuracy for
+      overfitting diagnosis.
+    </div>
+  </li>
+  <li>
+    <div>
+      <strong>Save artefacts</strong><br/>
+      Each model and the scaler are serialised with <code>joblib.dump()</code>
+      to <code>.joblib</code> files. <code>results.csv</code> stores the metric
+      table so the app can show it without re-running predictions.
+    </div>
+  </li>
+</ol>
+
+<h3>Full Training Script</h3>
+<pre><span class="kw">from</span> pathlib <span class="kw">import</span> Path
+<span class="kw">import</span> joblib, pandas <span class="kw">as</span> pd
+<span class="kw">from</span> sklearn.linear_model  <span class="kw">import</span> LogisticRegression
+<span class="kw">from</span> sklearn.tree          <span class="kw">import</span> DecisionTreeClassifier
+<span class="kw">from</span> sklearn.neighbors     <span class="kw">import</span> KNeighborsClassifier
+<span class="kw">from</span> sklearn.naive_bayes   <span class="kw">import</span> GaussianNB
+<span class="kw">from</span> sklearn.svm           <span class="kw">import</span> SVC
+<span class="kw">from</span> sklearn.preprocessing <span class="kw">import</span> StandardScaler
+<span class="kw">from</span> sklearn.model_selection <span class="kw">import</span> train_test_split
+<span class="kw">from</span> sklearn.metrics <span class="kw">import</span> (accuracy_score, roc_auc_score,
+    precision_score, recall_score, f1_score, matthews_corrcoef)
+
+<span class="cm"># ── 1. Load ──────────────────────────────────────────────────</span>
+df = pd.<span class="fn">read_csv</span>(<span class="st">"model/data/spambase.data"</span>, header=<span class="kw">None</span>, names=columns)
+
+<span class="cm"># ── 2. Split ─────────────────────────────────────────────────</span>
+X_train, X_test, y_train, y_test = <span class="fn">train_test_split</span>(
+    X, y, test_size=<span class="num">0.2</span>, random_state=<span class="num">42</span>, stratify=y)
+
+<span class="cm"># ── 3. Save test CSV ─────────────────────────────────────────</span>
+test_df = X_test.<span class="fn">copy</span>(); test_df[<span class="st">"is_spam"</span>] = y_test
+test_df.<span class="fn">to_csv</span>(<span class="st">"test_data.csv"</span>, index=<span class="kw">False</span>)
+
+<span class="cm"># ── 4. Scale ─────────────────────────────────────────────────</span>
+scaler = <span class="fn">StandardScaler</span>()
+X_train_s = scaler.<span class="fn">fit_transform</span>(X_train)   <span class="cm"># fit only on train</span>
+X_test_s  = scaler.<span class="fn">transform</span>(X_test)         <span class="cm"># apply to test</span>
+joblib.<span class="fn">dump</span>(scaler, <span class="st">"model/scaler.joblib"</span>)
+
+<span class="cm"># ── 5-7. Train, evaluate, save ───────────────────────────────</span>
+models = {
+    <span class="st">"Logistic Regression"</span>:    (<span class="st">"logistic_regression"</span>, <span class="fn">LogisticRegression</span>(max_iter=<span class="num">1000</span>)),
+    <span class="st">"Decision Tree"</span>:          (<span class="st">"decision_tree"</span>,       <span class="fn">DecisionTreeClassifier</span>()),
+    <span class="st">"KNN"</span>:                    (<span class="st">"knn"</span>,                 <span class="fn">KNeighborsClassifier</span>(n_neighbors=<span class="num">5</span>)),
+    <span class="st">"Naive Bayes"</span>:            (<span class="st">"naive_bayes"</span>,         <span class="fn">GaussianNB</span>()),
+    <span class="st">"Support Vector Machine"</span>: (<span class="st">"svm"</span>,                 <span class="fn">SVC</span>(probability=<span class="kw">True</span>)),
+}
+<span class="kw">for</span> name, (stem, clf) <span class="kw">in</span> models.<span class="fn">items</span>():
+    clf.<span class="fn">fit</span>(X_train_s, y_train)
+    y_pred = clf.<span class="fn">predict</span>(X_test_s)
+    y_prob = clf.<span class="fn">predict_proba</span>(X_test_s)[:, <span class="num">1</span>]
+    joblib.<span class="fn">dump</span>(clf, <span class="st">f"model/{stem}.joblib"</span>)</pre>
+
+<!-- ════════════════  APP  ════════════════ -->
+<h2 class="sec" id="app">How the Streamlit App Works (app.py)</h2>
+<p>
+  Streamlit turns a Python script into an interactive web app.
+  Every time the user interacts (uploads a file, changes the dropdown),
+  Streamlit re-runs the entire script from top to bottom.
+  <code>@st.cache_resource</code> and <code>@st.cache_data</code> prevent
+  the models from being reloaded on every re-run.
+</p>
+
+<h3>App Architecture</h3>
+<div class="diagram">app.py re-runs on every user interaction
+│
+├── @st.cache_resource  load_model(file_name)
+│       └── joblib.load(MODEL_DIR / file_name)   ← loaded once, cached
+│
+├── @st.cache_resource  load_scaler()
+│       └── joblib.load("model/scaler.joblib")   ← loaded once, cached
+│
+├── @st.cache_data      load_results()
+│       └── pd.read_csv("model/results.csv")     ← loaded once, cached
+│
+├── Sidebar
+│   ├── file_uploader  → uploaded CSV (raw bytes)
+│   └── selectbox      → chosen model name
+│
+└── Main panel
+    ├── [if no file]  → show info banner, stop
+    ├── Validate columns (57 features + is_spam)
+    ├── scaler.transform(X)           ← scale uploaded features
+    ├── model.predict(X_scaled)       ← class labels
+    ├── model.predict_proba(X_scaled) ← probabilities for AUC
+    ├── 6 × st.metric tiles
+    ├── Confusion matrix (Matplotlib → st.pyplot)
+    └── Classification report (DataFrame → st.dataframe)</div>
+
+<h3>Key Code Sections Explained</h3>
+
+<h3>1 · Caching (avoid reloading models on every interaction)</h3>
+<pre><span class="kw">@st</span>.cache_resource          <span class="cm"># keeps the object alive across re-runs</span>
+<span class="kw">def</span> <span class="fn">load_model</span>(file_name):
+    <span class="kw">return</span> joblib.<span class="fn">load</span>(MODEL_DIR / file_name)
+
+<span class="kw">@st</span>.cache_resource
+<span class="kw">def</span> <span class="fn">load_scaler</span>():
+    <span class="kw">return</span> joblib.<span class="fn">load</span>(MODEL_DIR / <span class="st">"scaler.joblib"</span>)</pre>
+
+<h3>2 · Sidebar controls</h3>
+<pre>uploaded   = st.sidebar.<span class="fn">file_uploader</span>(<span class="st">"Upload test CSV file"</span>, type=<span class="st">"csv"</span>)
+model_name = st.sidebar.<span class="fn">selectbox</span>(<span class="st">"Choose a model"</span>, <span class="fn">list</span>(MODEL_FILES))</pre>
+
+<h3>3 · Input validation</h3>
+<pre>scaler   = <span class="fn">load_scaler</span>()
+expected = <span class="fn">list</span>(scaler.feature_names_in_)   <span class="cm"># 57 column names</span>
+
+<span class="kw">if</span> TARGET <span class="kw">not in</span> data.columns:
+    st.<span class="fn">error</span>(<span class="st">f"Missing target column `{TARGET}`"</span>); st.<span class="fn">stop</span>()
+
+missing = [c <span class="kw">for</span> c <span class="kw">in</span> expected <span class="kw">if</span> c <span class="kw">not in</span> data.columns]
+<span class="kw">if</span> missing:
+    st.<span class="fn">error</span>(<span class="st">f"Missing {len(missing)} feature column(s)"</span>); st.<span class="fn">stop</span>()</pre>
+
+<h3>4 · Scaling + prediction</h3>
+<pre>X_s    = scaler.<span class="fn">transform</span>(X)           <span class="cm"># apply the same scaler from training</span>
+y_pred = model.<span class="fn">predict</span>(X_s)            <span class="cm"># class label: 0 or 1</span>
+y_prob = model.<span class="fn">predict_proba</span>(X_s)[:, <span class="num">1</span>]  <span class="cm"># probability of spam</span></pre>
+
+<h3>5 · Displaying metrics</h3>
+<pre>cols = st.<span class="fn">columns</span>(<span class="num">6</span>)
+cols[<span class="num">0</span>].<span class="fn">metric</span>(<span class="st">"Accuracy"</span>,  <span class="st">f"{accuracy_score(y, y_pred):.4f}"</span>)
+cols[<span class="num">1</span>].<span class="fn">metric</span>(<span class="st">"AUC"</span>,       <span class="st">f"{roc_auc_score(y, y_prob):.4f}"</span>)
+cols[<span class="num">2</span>].<span class="fn">metric</span>(<span class="st">"Precision"</span>, <span class="st">f"{precision_score(y, y_pred):.4f}"</span>)
+<span class="cm"># … Recall, F1, MCC</span></pre>
+
+<h3>6 · Confusion matrix</h3>
+<pre>fig, ax = plt.<span class="fn">subplots</span>(figsize=(<span class="num">4</span>, <span class="num">4</span>))
+ConfusionMatrixDisplay.<span class="fn">from_predictions</span>(
+    y, y_pred,
+    display_labels=[<span class="st">"Not spam"</span>, <span class="st">"Spam"</span>],
+    ax=ax, colorbar=<span class="kw">False</span>)
+st.<span class="fn">pyplot</span>(fig)   <span class="cm"># render the Matplotlib figure inside Streamlit</span></pre>
+
+<!-- ════════════════  DEPLOYMENT  ════════════════ -->
+<h2 class="sec" id="deploy">Deploying on Streamlit Community Cloud</h2>
+<ol class="step-list">
+  <li>Push all files to a public GitHub repository (including <code>model/*.joblib</code> and <code>test_data.csv</code>).</li>
+  <li>Go to <a href="https://streamlit.io/cloud" target="_blank">streamlit.io/cloud</a> and sign in with GitHub.</li>
+  <li>Click <strong>New app</strong> → select your repository → branch <code>main</code> → main file <code>app.py</code>.</li>
+  <li>Streamlit reads <code>requirements.txt</code> and installs the dependencies automatically.</li>
+  <li>Click <strong>Deploy</strong>. The app gets a public URL within a few minutes.</li>
+</ol>
+
+<div class="info-box green">
+  <strong>Tip:</strong> The free tier has a 1 GB memory limit.
+  The five <code>.joblib</code> models are lightweight (scikit-learn models on 3 680 samples),
+  so they load comfortably within that budget.
+  Avoid uploading the full 4 601-row dataset to the app — use only the 921-row test CSV.
+</div>
+
+<!-- ════════════════  FOOTER  ════════════════ -->
+<footer>
+  Spam Email Classifier · M.Tech AIML · BITS WILP · 2026 &nbsp;|&nbsp;
+  Dataset: UCI Spambase &nbsp;|&nbsp;
+  Live app: <a href="https://spam-email-classifier-hkb.streamlit.app/">spam-email-classifier-hkb.streamlit.app</a>
+</footer>
+
+</div><!-- .page -->
+</body>
+</html>
